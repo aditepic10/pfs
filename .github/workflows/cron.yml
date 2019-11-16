@@ -1,9 +1,8 @@
 name: Python application
 
 on: 
-  pull_request:
-    branches: 
-      - master
+  schedule:
+    - cron: "0 5 * * 0-6"
 
 jobs:
   test:
@@ -11,6 +10,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v1
+      with:
+        ref: refs/head/testing
     
     - name: Set up Python 3.7
       uses: actions/setup-python@v1
@@ -22,14 +23,10 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
-    - uses: rlespinasse/github-slug-action@1.0.0
-    - name: Merge source branch with testing
+    - name: Update from master
       shell: bash
       run: |
-        git checkout testing
-        git config user.name "CI"
-        git config user.email "tjreverb@gmail.com"
-        git pull origin ${{ env.GITHUB_HEAD_REF_SLUG }}
+        git pull origin master
     
     - name: Run test cases
       shell: bash
