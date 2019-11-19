@@ -179,9 +179,7 @@ class Iridium(Radio):
         self.write_to_serial("AT+SBDMTA=1")
 
         while True:  # Continuously listen for rings
-            if not self.has_modules:
-                # Modules not set yet
-                raise RuntimeError("No Modules Set")
+            telemetry = self.get_module_or_raise_error("telemetry")
 
             if not self.serial.is_open:
                 # Low power mode
@@ -217,9 +215,7 @@ class Iridium(Radio):
 
                     if message:  # Evaluates to True if message not empty
                         self.logger.debug(message)
-                        if "telemetry" in self.modules:
-                            telemetry = self.modules["telemetry"]
-                            telemetry.enqueue(message)
+                        telemetry.enqueue(message)
 
     def send(self, message):
         """

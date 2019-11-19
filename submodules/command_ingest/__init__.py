@@ -64,7 +64,7 @@ class CommandIngest(Submodule):
             self.send_through_aprs(f"CMDERR: Module not found")
             return False
         if not self.has_module(module):
-            raise RuntimeError(f"[{self.name}]:[{module}] not found")
+            raise ModuleNotFoundError(submodule=self, dependency=module)
         if hasattr(module, func):
             self.send_through_aprs(f"CMDERR: Function {func} not found in {module}")
             return False

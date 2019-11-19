@@ -101,9 +101,8 @@ class APRS(Radio):
         Run via ThreadHandler process['listen_thread']
         """
         while True:
-            if not self.has_modules:
-                # Modules not set yet
-                raise RuntimeError("No Modules Set")
+
+            telemetry = self.get_module_or_raise_error("telemetry")
 
             if not self.serial.is_open:
                 # Low power mode
@@ -133,9 +132,7 @@ class APRS(Radio):
             parsed_message = self.parse_aprs_packet(line)
 
             if parsed_message:
-                if "telemetry" in self.modules:
-                    telemetry = self.modules["telemetry"]
-                    telemetry.enqueue(parsed_message)
+                telemetry.enqueue(parsed_message)
 
     def send(self, message):
         """

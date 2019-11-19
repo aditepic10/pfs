@@ -7,18 +7,19 @@ from threading import Lock      # packet locks
 from time import sleep          # decide method
 from collections import deque   # general, error, log queues
 
+from core.core import Core
 from submodules.submodule import Submodule
 from helpers.threadhandler import ThreadHandler    # threads
 from helpers import error, log     # Log and error classes
 
 
 class Telemetry(Submodule):
-    def __init__(self, config):
+    def __init__(self, core: Core, config: dict):
         """
         Constructor method. Initializes variables
         :param config: Config variable passed in from core.
         """
-        Submodule.__init__(self, name="telemetry", config=config)
+        Submodule.__init__(self, name="telemetry", core=core, config=config)
 
         self.general_queue = deque()
         self.log_stack = deque()
@@ -29,6 +30,7 @@ class Telemetry(Submodule):
                 target=partial(self.decide), 
                 name="telemetry-decide",
                 parent_logger=self.logger,
+                core=self.core,
                 daemon=False
                 )
         }
@@ -59,8 +61,7 @@ class Telemetry(Submodule):
         squishedpackets = ""
         retVal = False
 
-        if not self.has_module(radio):
-            raise RuntimeError(f"[{self.name}]:[{radio}] module not found")
+        radio = self.get_module_or_raise_error(radio)
 
         with self.packet_lock:
             while len(self.log_stack) + len(self.err_stack) > 0:    # while there's stuff to pop off
@@ -72,7 +73,7 @@ class Telemetry(Submodule):
                         squishedpackets += str(self.log_stack.pop())
                 squishedpackets = base64.b64encode(squishedpackets.encode('ascii'))
                 # print(squishedpackets)
-                self.get_module_or_raise_error(radio).send(str(squishedpackets))
+                radio.send(str(squishedpackets))
                 retVal = True
                 squishedpackets = ""
 

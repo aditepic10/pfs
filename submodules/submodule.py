@@ -1,6 +1,7 @@
 import logging
 
 from core.core import Core
+from helpers.exceptions import ModuleNotFoundError
 
 
 class Submodule:
@@ -69,4 +70,4 @@ class Submodule:
         if module_name in self.modules and self.modules[module_name] is not None:
             return self.modules[module_name]
         else:
-            raise RuntimeError(f"[{self.name}]:[{module_name}] not found")
+            raise ModuleNotFoundError(self, module_name)
