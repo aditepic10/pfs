@@ -104,18 +104,6 @@ class Core:
             if hasattr(self.submodules[submodule], 'enter_low_power_mode'):
                 self.submodules[submodule].enter_low_power_mode()
 
-    def enter_emergency_mode(self, reason: str = '') -> None:
-        """
-        Enter emergency power mode.
-        :param reason: Reason for entering emergency power mode.
-        """
-        self.logger.warning(
-            f"Entering emergency mode{'  Reason: ' if reason else ''}{reason if reason else ''}")
-        self.state = Mode.EMERGENCY
-        for submodule in self.submodules:
-            if hasattr(self.submodules[submodule], 'enter_emergency_mode'):
-                self.submodules[submodule].enter_emergency_mode()
-
     def request(self, module_name: str):
         """
         Returns a reference to a specified module if specified module is present
