@@ -7,8 +7,6 @@ from core.core import Core
 from helpers.threadhandler import ThreadHandler
 
 
-
-
 class CommandIngest(Submodule):
     """
     Submodule class that handles the processing and execution of commands
