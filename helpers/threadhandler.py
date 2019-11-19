@@ -3,9 +3,12 @@ import logging
 import threading
 import time
 
+from core import Core
+from helpers.exceptions import ModuleNotFoundError
+
 
 class ThreadHandler:
-    def __init__(self, target: callable, name: str = None, parent_logger=logging, interval: int = 3,
+    def __init__(self, core: Core, target: callable, name: str = None, parent_logger=logging, interval: int = 3,
                  suppress_out: bool = False, auto_restart: bool = True, daemon: bool = False):
         """
         Initialize a ThreadHandler.
@@ -39,6 +42,7 @@ class ThreadHandler:
         self.is_active = True
         self.is_alive = False
         self.daemon = daemon
+        self.core = core
 
     def start(self):
         """
@@ -53,7 +57,9 @@ class ThreadHandler:
                     self.parent_logger.info("'%s' thread started" % self.name)
                 try:
                     self.target()
-                except BaseException as e:
+                except ModuleNotFoundError as m:
+                    self.core.reset_module(m.submodule, m.missing)        
+                except BaseException as e:            
                     if not self.suppress_out:
                         self.parent_logger.exception(
                             str(e) + ", restarting '%s'" % self.name)
