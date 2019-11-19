@@ -35,7 +35,8 @@ class Submodule:
         Immediately puts the submodule into a low power state. Different for each submodule.
         It is safe to assume that if this method is called, the previous state was NORMAL_MODE
         """
-        raise NotImplementedError
+        for process in self.processes:
+            self.processes[process].pause()
 
     def enter_normal_mode(self) -> None:
         """
@@ -43,7 +44,8 @@ class Submodule:
         It is safe to assume that if this method is called, the previous state was LOW_POWER_MODE
         :return:
         """
-        raise NotImplementedError
+        for process in self.processes:
+            self.processes[process].resume()
 
     def set_modules(self, dependencies: dict) -> None:
         """
@@ -70,7 +72,9 @@ class Submodule:
         if self.has_module(module_name):
             return self.modules[module_name]
         else:
-            raise ModuleNotFoundError(self, module_name)
+            err = ModuleNotFoundError(self, module_name)
+            self.logger.error(str(err))
+            raise err
     
     def __str__(self):
         return f"Submodule: {self.name()}"
