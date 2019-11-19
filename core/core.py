@@ -32,12 +32,12 @@ class Core:
         self.logger = logging.getLogger("core")
         self.state = Mode.LOW_POWER
         self.submodules = {
-            "antenna_deployer": AntennaDeployer(config=self.config),
-            "aprs": APRS(config=self.config),
-            "command_ingest": CommandIngest(config=self.config),
-            "eps": EPS(config=self.config),
-            "iridium": Iridium(config=self.config),
-            "telemetry": Telemetry(config=self.config),
+            "antenna_deployer": AntennaDeployer(core=self, config=self.config),
+            "aprs": APRS(core=self, config=self.config),
+            "command_ingest": CommandIngest(core=self, config=self.config),
+            "eps": EPS(core=self, config=self.config),
+            "iridium": Iridium(core=self, config=self.config),
+            "telemetry": Telemetry(core=self, config=self.config),
         }
         self.populate_dependencies()
         self.processes = {
@@ -49,6 +49,10 @@ class Core:
             "telemetry_dump": Timer(
                 interval=self.config['core']['dump_interval'],
                 function=partial(self.submodules["telemetry"].dump)
+            ),
+            "telemetry_heartbeat": Timer(
+                interval=self.config['core']['heartbeat_invertal'],
+                target=partial(self.submodules["telemetry"].heartbeat)
             )
         }
 

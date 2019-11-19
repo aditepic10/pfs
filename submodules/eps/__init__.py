@@ -8,6 +8,7 @@ from functools import partial
 from smbus2 import SMBusWrapper
 from submodules import telemetry
 
+from core.core import Core
 from submodules.submodule import Submodule
 from helpers.log import Log
 from helpers.error import Error
@@ -15,8 +16,8 @@ from helpers.threadhandler import ThreadHandler
 
 class EPS(Submodule):
     
-    def __init__(self, config):
-        Submodule.__init__(self, name="eps", config=config)
+    def __init__(self, core: Core, config: dict):
+        Submodule.__init__(self, name="eps",core=core, config=config)
         self.address = 0x57
         self.eps_dict = {'a':1, 'i2c':2, 'c':3, 'antenna':4, 'pi':5, 'iridium':6, 'aprs':7, 'h':8}
 

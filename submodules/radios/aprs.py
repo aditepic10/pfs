@@ -1,6 +1,7 @@
 from functools import partial
 from time import time, sleep
 
+from core.core import Core
 from submodules.radios import Radio
 from helpers.threadhandler import ThreadHandler
 
@@ -9,13 +10,13 @@ from serial import Serial
 
 
 class APRS(Radio):
-    def __init__(self, config):
+    def __init__(self, core: Core, config:dict):
         """
         Assumes APRS is in low power mode on start. Sets up class fields.
         :param config: the config dictionary loaded from config_default.yml
         """
 
-        Radio.__init__(self, "aprs", config)
+        Radio.__init__(self, name="aprs", core=core, config=config)
 
         self.last_telem_time = time()
         self.last_message_time = time()

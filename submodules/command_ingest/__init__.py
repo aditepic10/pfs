@@ -1,20 +1,24 @@
-from submodules.submodule import Submodule
-from helpers.threadhandler import ThreadHandler
-
 from collections import deque as queue
 from functools import partial
+
+from submodules.submodule import Submodule
+from core.core import Core
+
+from helpers.threadhandler import ThreadHandler
+
+
 
 
 class CommandIngest(Submodule):
     """
     Submodule class that handles the processing and execution of commands
     """
-    def __init__(self, config):
+    def __init__(self, core: Core, config: dict):
         """
         Instantiates a new CommandIngest instance
         :param config: dictionary of configuration data
         """
-        Submodule.__init__(self, "command_ingest", config)
+        Submodule.__init__(self, name="command_ingest", core=core, config=config)
         self.general_queue = queue()
 
         self.processes = {

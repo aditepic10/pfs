@@ -1,16 +1,17 @@
+from core.core import Core
 from submodules.submodule import Submodule
 
 
 class Radio(Submodule):
     """ Abstract radio class which both APRS and Iridium extend """
 
-    def __init__(self, name, config):
+    def __init__(self, name: str, core: Core, config: dict):
         """
         Instantiates a new Radio instance
         :param name: name of the radio("aprs" or "iridium")
         :param config: dictionary of configuration data
         """
-        Submodule.__init__(self, name, config)
+        Submodule.__init__(self, name=name, core=core, config=config)
 
     def send(self, message) -> None:
         """

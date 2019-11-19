@@ -1,4 +1,6 @@
 from helpers import log
+
+from core.core import Core
 from submodules.submodule import Submodule
 
 from . import isisants
@@ -8,12 +10,12 @@ class AntennaDeployer(Submodule):
     """
     Submodule class that interfaces with the ISIS Antenna Deployer
     """
-    def __init__(self, config: dict):
+    def __init__(self, core: Core, config: dict):
         """
         Instantiates a new AntennaDeployer instance
         :param config: dictionary of configuration data
         """
-        Submodule.__init__(self, name="antenna_deployer", config=config)
+        Submodule.__init__(self, name="antenna_deployer", core=core, config=config)
 
     def start(self) -> None:
         """

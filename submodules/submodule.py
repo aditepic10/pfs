@@ -1,17 +1,20 @@
 import logging
 
+from core.core import Core
+
 
 class Submodule:
     """
     Abstract class for all submodule, regardless of job
     """
-    def __init__(self, name: str, config: dict):
+    def __init__(self, name: str, core: Core, config: dict):
         """
         Instantiates a new Submodule instance
         :param name: name of submodule
         :param config: dictionary of configuration data
         """
         self.name = name
+        self.core = core
         self.config = config
         self.logger = logging.getLogger(self.name)
         self.modules = dict()
