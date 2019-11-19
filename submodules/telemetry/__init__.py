@@ -10,6 +10,7 @@ from collections import deque   # general, error, log queues
 from core.core import Core
 from submodules.submodule import Submodule
 from helpers.threadhandler import ThreadHandler    # threads
+from helpers.mode import Mode
 from helpers import error, log     # Log and error classes
 
 
@@ -58,6 +59,8 @@ class Telemetry(Submodule):
         :param radio: Radio to send telemetry through, either "aprs" or "iridium"
         :return True if anything was sent, false otherwise
         """
+        if self.core.get_state() != Mode.NORMAL:
+            return False
         squishedpackets = ""
         retVal = False
 
@@ -114,19 +117,22 @@ class Telemetry(Submodule):
         Send a heartbeat through Iridium.
         :return: None
         """
-        self.get_module_or_raise_error("iridium").send("TJREVERB ALIVE, {0}".format(time.time()))
+        if self.core.get_state() == Mode.NORMAL:
+            self.get_module_or_raise_error("iridium").send("TJREVERB ALIVE, {0}".format(time.time()))
 
     def enter_normal_mode(self) -> None: # TODO: IMPLEMENT IN CYCLE 2
         """
         Enter normal mode.
         :return: None
         """
-        pass
+        for process in self.processes:
+            process.resume()
     
     def enter_low_power_mode(self) -> None: # TODO: IMPLEMENT IN CYCLE 2
         """
         Enter low power mode.
         :return: None
         """
-        pass
+        for process in self.processes:
+            process.pause()
     
