@@ -11,6 +11,7 @@ from helpers.power import Power
 from helpers.threadhandler import ThreadHandler
 from core.processes import power_watchdog, is_first_boot
 
+from submodules.submodule import Submodule
 from submodules.antenna_deployer import AntennaDeployer
 from submodules.command_ingest import CommandIngest
 from submodules.eps import EPS
@@ -75,6 +76,9 @@ class Core:
 
     def get_state(self) -> Mode:
         return self.state
+
+    def reset_module(self, submodule: Submodule, dependency: str) -> None:
+        submodule.modules[dependency] = self.submodules[dependency]
 
     def enter_normal_mode(self, reason: str = '') -> None:
         """
