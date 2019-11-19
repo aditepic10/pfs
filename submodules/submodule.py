@@ -67,7 +67,7 @@ class Submodule:
         :param module_name: name of dependency module
         :return: Reference to dependency module or None with RuntimeError raised
         """
-        if module_name in self.modules and self.modules[module_name] is not None:
+        if self.has_module(module_name):
             return self.modules[module_name]
         else:
             raise ModuleNotFoundError(self, module_name)
