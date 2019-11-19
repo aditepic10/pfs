@@ -119,6 +119,9 @@ class Core:
         """
         return self.submodules[module_name] if module_name in self.submodules.keys() else False
 
+    def __str__(self):
+        return "Core: core"
+
     def start(self) -> None:
         """
         Runs the startup process for core

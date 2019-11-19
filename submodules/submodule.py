@@ -71,3 +71,6 @@ class Submodule:
             return self.modules[module_name]
         else:
             raise ModuleNotFoundError(self, module_name)
+    
+    def __str__(self):
+        return f"Submodule: {self.name()}"
