@@ -23,6 +23,7 @@ from submodules.telemetry import Telemetry
 class Core:
 
     def __init__(self):
+        self.name = "core"
         if os.path.exists('config/config_custom.yml'):
             with open('config/config_custom.yml') as f:
                 self.config = safe_load(f)
@@ -112,7 +113,7 @@ class Core:
         return self.submodules[module_name] if module_name in self.submodules.keys() else False
 
     def __str__(self):
-        return "Core: core"
+        return f"Core: {self.name}"
 
     def start(self) -> None:
         """
