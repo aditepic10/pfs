@@ -32,13 +32,13 @@ class Core:
 
         self.logger = logging.getLogger("core")
         self.state = Mode.LOW_POWER
-        to_snake = re.compile(r'([a-z0-9])([A-Z])')
+        to_snake = partial(re.compile(r'([a-z0-9])([A-Z])').sub, r'\1_\2')
 
         self.submodules = {
-            to_snake.sub(r'\1_\2', submodule.__name__).lower(): submodule(config=self.config)
+            to_snake(submodule.__name__).lower(): submodule(config=self.config)
             for submodule in [AntennaDeployer, APRS, CommandIngest, EPS, Iridium, Telemetry]
         }
-        
+
         self.populate_dependencies()
         self.processes = {
             "power_monitor": ThreadHandler(
