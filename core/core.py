@@ -1,6 +1,7 @@
 import logging
 import os
 import time
+import re
 
 from functools import partial
 from threading import Timer
@@ -31,14 +32,13 @@ class Core:
 
         self.logger = logging.getLogger("core")
         self.state = Mode.LOW_POWER
+        to_snake = re.compile(r'([a-z0-9])([A-Z])')
+
         self.submodules = {
-            "antenna_deployer": AntennaDeployer(config=self.config),
-            "aprs": APRS(config=self.config),
-            "command_ingest": CommandIngest(config=self.config),
-            "eps": EPS(config=self.config),
-            "iridium": Iridium(config=self.config),
-            "telemetry": Telemetry(config=self.config),
+            to_snake.sub(r'\1_\2', submodule.__name__).lower(): submodule(config=self.config)
+            for submodule in [AntennaDeployer, APRS, CommandIngest, EPS, Iridium, Telemetry]
         }
+        
         self.populate_dependencies()
         self.processes = {
             "power_monitor": ThreadHandler(
