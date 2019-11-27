@@ -23,12 +23,7 @@ from submodules.telemetry import Telemetry
 class Core:
 
     def __init__(self):
-        if os.path.exists('config/config_custom.yml'):
-            with open('config/config_custom.yml') as f:
-                self.config = safe_load(f)
-        else:
-            with open('config/config_default.yml') as f:
-                self.config = safe_load(f)
+        self.config = {'core': {'modules': {'A': ['eps', 'command_ingest'], 'B': ['antenna_deployer'], 'C': ['aprs', 'iridium', 'telemetry']}, 'dump_interval': 3600, 'sleep_interval': 1800}, 'antenna_deployer': {'depends_on': ['telemetry'], 'ANT_1': 0, 'ANT_2': 1, 'ANT_3': 2, 'ANT_4': 3}, 'aprs': {'depends_on': ['telemetry'], 'serial_port': '/dev/ttyUSB0', 'telem_timeout': 70, 'message_spacing': 1}, 'command_ingest': {'depends_on': ['antenna_deployer', 'aprs', 'eps', 'iridium', 'telemetry']}, 'eps': {'depends_on': ['telemetry'], 'looptime': 20}, 'iridium': {'depends_on': ['telemetry'], 'serial_port': '/dev/ttyUSB0'}, 'telemetry': {'depends_on': ['command_ingest'], 'buffer_size': 100, 'max_packet_size': 170}}
 
         self.logger = logging.getLogger("core")
         self.state = Mode.LOW_POWER
