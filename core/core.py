@@ -1,16 +1,17 @@
 import logging
 import os
 import time
-import re
 
 from functools import partial
 from threading import Timer
 from yaml import safe_load
 
+from core.processes import power_watchdog, is_first_boot
+
+from helpers import to_snake
 from helpers.mode import Mode
 from helpers.power import Power
 from helpers.threadhandler import ThreadHandler
-from core.processes import power_watchdog, is_first_boot
 
 from submodules.antenna_deployer import AntennaDeployer
 from submodules.command_ingest import CommandIngest
@@ -25,9 +26,8 @@ class Core:
     def __init__(self):
         self.config = {'core': {'modules': {'A': ['eps', 'command_ingest'], 'B': ['antenna_deployer'], 'C': ['aprs', 'iridium', 'telemetry']}, 'dump_interval': 3600, 'sleep_interval': 1800}, 'antenna_deployer': {'depends_on': ['telemetry'], 'ANT_1': 0, 'ANT_2': 1, 'ANT_3': 2, 'ANT_4': 3}, 'aprs': {'depends_on': ['telemetry'], 'serial_port': '/dev/ttyUSB0', 'telem_timeout': 70, 'message_spacing': 1}, 'command_ingest': {'depends_on': ['antenna_deployer', 'aprs', 'eps', 'iridium', 'telemetry']}, 'eps': {'depends_on': ['telemetry'], 'looptime': 20}, 'iridium': {'depends_on': ['telemetry'], 'serial_port': '/dev/ttyUSB0'}, 'telemetry': {'depends_on': ['command_ingest'], 'buffer_size': 100, 'max_packet_size': 170}}
 
-        self.logger = logging.getLogger("core")
+        self.logger = logging.getLogger(to_snake(Core.__name__))
         self.state = Mode.LOW_POWER
-        to_snake = partial(re.compile(r'([a-z0-9])([A-Z])').sub, r'\1_\2')
 
         self.submodules = {
             to_snake(submodule.__name__).lower(): submodule(config=self.config)
@@ -46,6 +46,7 @@ class Core:
                 function=partial(self.submodules["telemetry"].dump)
             )
         }
+        self.logger.info("Initialized")
 
     def populate_dependencies(self) -> None:
         """
@@ -90,18 +91,6 @@ class Core:
         for submodule in self.submodules:
             if hasattr(self.submodules[submodule], 'enter_low_power_mode'):
                 self.submodules[submodule].enter_low_power_mode()
-
-    def enter_emergency_mode(self, reason: str = '') -> None:
-        """
-        Enter emergency power mode.
-        :param reason: Reason for entering emergency power mode.
-        """
-        self.logger.warning(
-            f"Entering emergency mode{'  Reason: ' if reason else ''}{reason if reason else ''}")
-        self.state = Mode.EMERGENCY
-        for submodule in self.submodules:
-            if hasattr(self.submodules[submodule], 'enter_emergency_mode'):
-                self.submodules[submodule].enter_emergency_mode()
 
     def request(self, module_name: str):
         """
