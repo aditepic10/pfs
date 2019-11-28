@@ -24,6 +24,7 @@ class CommandIngest(Submodule):
                 target=partial(self.dispatch),
                 name="command_ingest_dispatch",
                 parent_logger=self.logger,
+                core=self.core
             )
         }
 

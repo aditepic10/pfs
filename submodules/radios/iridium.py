@@ -23,6 +23,7 @@ class Iridium(Radio):
                 target=partial(self.listen),
                 name="iridium-listen",
                 parent_logger=self.logger,
+                core=self.core
             )
         }
 

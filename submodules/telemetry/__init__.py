@@ -31,9 +31,8 @@ class Telemetry(Submodule):
                 target=partial(self.decide), 
                 name="telemetry-decide",
                 parent_logger=self.logger,
-                core=self.core,
-                daemon=False
-                )
+                core=self.core
+            )
         }
 
     def enqueue(self, message) -> bool:

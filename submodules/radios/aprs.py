@@ -27,6 +27,7 @@ class APRS(Radio):
                 target=partial(self.listen),
                 name="aprs-listen",
                 parent_logger=self.logger,
+                core=self.core
             )
         }
 

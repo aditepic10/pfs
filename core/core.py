@@ -40,7 +40,8 @@ class Core:
             "power_monitor": ThreadHandler(
                 target=partial(power_watchdog, core=self, eps=self.submodules['eps']),
                 name="power_monitor",
-                parent_logger=self.logger
+                parent_logger=self.logger,
+                core=self
             ),
             "telemetry_dump": Timer(
                 interval=self.config['core']['dump_interval'],
@@ -48,7 +49,7 @@ class Core:
             ),
             "telemetry_heartbeat": Timer(
                 interval=self.config['core']['heartbeat_invertal'],
-                target=partial(self.submodules["telemetry"].heartbeat)
+                function=partial(self.submodules["telemetry"].heartbeat)
             )
         }
         self.logger.info("Initialized")
