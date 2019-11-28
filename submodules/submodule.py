@@ -1,8 +1,9 @@
 import logging
 
 from core.core import Core
-from helpers.exceptions import ModuleNotFoundError
 
+from helpers.exceptions import ModuleNotFoundError
+from helpers import to_snake
 
 class Submodule:
     """
@@ -17,9 +18,10 @@ class Submodule:
         self.name = name
         self.core = core
         self.config = config
-        self.logger = logging.getLogger(self.name)
+        self.logger = logging.getLogger(to_snake(self.name))
         self.modules = dict()
         self.processes = dict()
+        self.logger.info("Initialized")
 
     def start(self) -> None:
         """
@@ -29,6 +31,7 @@ class Submodule:
 
         for process in self.processes:
             self.processes[process].start()
+        self.logger.info("Started")
 
     def enter_low_power_mode(self) -> None:
         """
@@ -54,6 +57,7 @@ class Submodule:
         :return: None
         """
         self.modules = dependencies
+        self.logger.info("modules set")
 
     def has_module(self, module_name: str) -> bool:
         """

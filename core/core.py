@@ -6,10 +6,12 @@ from functools import partial
 from threading import Timer
 from yaml import safe_load
 
+from core.processes import power_watchdog, is_first_boot
+
+from helpers import to_snake
 from helpers.mode import Mode
 from helpers.power import Power
 from helpers.threadhandler import ThreadHandler
-from core.processes import power_watchdog, is_first_boot
 
 from submodules.submodule import Submodule
 from submodules.antenna_deployer import AntennaDeployer
@@ -23,24 +25,16 @@ from submodules.telemetry import Telemetry
 class Core:
 
     def __init__(self):
-        self.name = "core"
-        if os.path.exists('config/config_custom.yml'):
-            with open('config/config_custom.yml') as f:
-                self.config = safe_load(f)
-        else:
-            with open('config/config_default.yml') as f:
-                self.config = safe_load(f)
+        self.config = {'core': {'modules': {'A': ['eps', 'command_ingest'], 'B': ['antenna_deployer'], 'C': ['aprs', 'iridium', 'telemetry']}, 'dump_interval': 3600, 'sleep_interval': 1800}, 'antenna_deployer': {'depends_on': ['telemetry'], 'ANT_1': 0, 'ANT_2': 1, 'ANT_3': 2, 'ANT_4': 3}, 'aprs': {'depends_on': ['telemetry'], 'serial_port': '/dev/ttyUSB0', 'telem_timeout': 70, 'message_spacing': 1}, 'command_ingest': {'depends_on': ['antenna_deployer', 'aprs', 'eps', 'iridium', 'telemetry']}, 'eps': {'depends_on': ['telemetry'], 'looptime': 20}, 'iridium': {'depends_on': ['telemetry'], 'serial_port': '/dev/ttyUSB0'}, 'telemetry': {'depends_on': ['command_ingest'], 'buffer_size': 100, 'max_packet_size': 170}}
 
-        self.logger = logging.getLogger("core")
+        self.logger = logging.getLogger(to_snake(Core.__name__))
         self.state = Mode.LOW_POWER
+
         self.submodules = {
-            "antenna_deployer": AntennaDeployer(core=self, config=self.config),
-            "aprs": APRS(core=self, config=self.config),
-            "command_ingest": CommandIngest(core=self, config=self.config),
-            "eps": EPS(core=self, config=self.config),
-            "iridium": Iridium(core=self, config=self.config),
-            "telemetry": Telemetry(core=self, config=self.config),
+            to_snake(submodule.__name__).lower(): submodule(config=self.config)
+            for submodule in [AntennaDeployer, APRS, CommandIngest, EPS, Iridium, Telemetry]
         }
+
         self.populate_dependencies()
         self.processes = {
             "power_monitor": ThreadHandler(
@@ -57,6 +51,7 @@ class Core:
                 target=partial(self.submodules["telemetry"].heartbeat)
             )
         }
+        self.logger.info("Initialized")
 
     def populate_dependencies(self) -> None:
         """
