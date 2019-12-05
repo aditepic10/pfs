@@ -11,9 +11,12 @@ epsdict = {'a': 1, 'i2c': 2, 'c': 3, 'antenna': 4,
 
 
 def pin_on(device_name) -> bool:
-    with SMBusWrapper(1) as bus:
-        bus.write_byte_data(address, 0x12, epsdict[device_name])
-    print(f"Turned on {device_name}")
+    if device_name in epsdict:
+        with SMBusWrapper(1) as bus:
+            bus.write_byte_data(address, 0x12, epsdict[device_name])
+        print(f"Turned on {device_name}")
+    else:
+        print(f"Cannot find {device_name}")
 
 def reboot_device(device_name) -> None:
     pin_off(device_name)
@@ -24,9 +27,12 @@ def reboot_device(device_name) -> None:
 
 
 def pin_off(device_name) -> bool:
-    with SMBusWrapper(1) as bus:
-        bus.write_byte_data(address, 0x13, epsdict[device_name])
-    print(f"Turned off {device_name}")
+    if device_name in epsdict:
+        with SMBusWrapper(1) as bus:
+            bus.write_byte_data(address, 0x13, epsdict[device_name])
+        print(f"Turned off {device_name}")
+    else:
+        print(f"Cannot find {device_name}")
 
 def main():
     parser = argparse.ArgumentParser()
