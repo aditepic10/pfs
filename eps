@@ -1,0 +1,57 @@
+#!/usr/bin/env python3
+#-*- coding: utf-8 -*-
+import time
+import argparse
+
+from smbus2 import SMBusWrapper
+
+address = 0x57
+epsdict = {'a': 1, 'i2c': 2, 'c': 3, 'antenna': 4,
+           'pi': 5, 'iridium': 6, 'aprs': 7, 'h': 8, 'i': 9, 'j': 10}
+
+
+def pin_on(device_name) -> bool:
+    with SMBusWrapper(1) as bus:
+        bus.write_byte_data(address, 0x12, epsdict[device_name])
+    print(f"Turned on {device_name}")
+
+def reboot_device(device_name) -> None:
+    pin_off(device_name)
+    time.sleep(3)
+    pin_on(device_name)
+    time.sleep(3)
+    print(f"Rebooted {device_name}")
+
+
+def pin_off(device_name) -> bool:
+    with SMBusWrapper(1) as bus:
+        bus.write_byte_data(address, 0x13, epsdict[device_name])
+    print(f"Turned off {device_name}")
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.set_defaults(func=None)
+    
+    subparsers = parser.add_subparsers()
+    
+    on = subparsers.add_parser("on", help="turn on a pin")
+    on.add_argument("device", help="device to turn on")
+    on.set_defaults(func=pin_on)
+
+    off = subparsers.add_parser("off", help="turn off a pin")
+    off.add_argument("device", help="device to turn off")
+    off.set_defaults(func=pin_off)
+
+    reboot = subparsers.add_parser("reboot", help="reboot a pin")
+    reboot.add_argument("device", help="device to reboot")
+    reboot.set_defaults(func=reboot)
+
+    args = parser.parse_args()
+    if args.func is None:
+        parser.print_help()
+    else:
+        args.func(args.device)
+
+if __name__ == '__main__':
+    main()
+
