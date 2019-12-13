@@ -5,7 +5,7 @@ from submodules.radios import Radio
 from helpers.threadhandler import ThreadHandler
 
 
-from serial import Serial
+from serial import Serial, SerialException
 
 
 class APRS(Radio):
@@ -114,7 +114,14 @@ class APRS(Radio):
                 if not self.serial.is_open:
                     port_closed = True
                     break
-                result = self.serial.read()
+                try:
+                    result = self.serial.read()
+                except SerialException:
+                    self.logger.debug("ERROR WITH APRS PORT")
+
+                    port_closed = True
+                    break
+
                 line += result
 
             if port_closed:
@@ -143,5 +150,10 @@ class APRS(Radio):
         """
 
         self.last_message_time = time()
-        self.serial.write((message + "\n").encode("utf-8"))  # Send the message
+        try:
+            self.serial.write((message + "\n").encode("utf-8"))  # Send the message
+        except SerialException:
+            self.logger.debug("PORT GOT CLOSED WHILE SENDING")
+            pass
+
         sleep(1)
