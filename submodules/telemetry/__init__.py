@@ -1,15 +1,16 @@
-import base64                   # packet encoding
-import logging                  # logger
+import base64  # packet encoding
+import logging  # logger
 import time
 
-from functools import partial   # thread
-from threading import Lock      # packet locks
-from time import sleep          # decide method
-from collections import deque   # general, error, log queues
+from functools import partial  # thread
+from threading import Lock  # packet locks
+from time import sleep  # decide method
+from collections import deque  # general, error, log queues
 
 from submodules.submodule import Submodule
-from helpers.threadhandler import ThreadHandler    # threads
-from helpers import error, log     # Log and error classes
+from .snapshot import Snapshot
+from helpers.threadhandler import ThreadHandler  # threads
+from helpers import error, log  # Log and error classes
 
 
 class Telemetry(Submodule):
@@ -24,13 +25,20 @@ class Telemetry(Submodule):
         self.log_stack = deque()
         self.err_stack = deque()
         self.packet_lock = Lock()
+        self.snapshots = []
         self.processes = {
             "telemetry-decide": ThreadHandler(
-                target=partial(self.decide), 
+                target=partial(self.decide),
                 name="telemetry-decide",
                 parent_logger=self.logger,
                 daemon=False
-                )
+            ),
+            "create-new-snapshot": ThreadHandler(
+                target=partial(self.create_snapshot),
+                name="create-new-snapshot",
+                parent_logger=self.logger,
+                daemon=False
+            )
         }
 
     def enqueue(self, message) -> bool:
@@ -40,9 +48,9 @@ class Telemetry(Submodule):
         or command (string - must begin with semicolon, see command_ingest's readme)
         :return True if a valid message was enqueued, false otherwise
         """
-        if not ((type(message) is str and message[0:4] == 'CMD$' and message[-1] == ';') # message is Command
-         or type(message) is error.Error # message is Error
-         or type(message) is log.Log):   # message is Log
+        if not ((type(message) is str and message[0:4] == 'CMD$' and message[-1] == ';')  # message is Command
+                or type(message) is error.Error  # message is Error
+                or type(message) is log.Log):  # message is Log
             self.logger.error("Attempted to enqueue invalid message")
             return False
         with self.packet_lock:
@@ -63,10 +71,12 @@ class Telemetry(Submodule):
             raise RuntimeError(f"[{self.name}]:[{radio}] module not found")
 
         with self.packet_lock:
-            while len(self.log_stack) + len(self.err_stack) > 0:    # while there's stuff to pop off
-                next_packet = (str(self.err_stack[-1]) if len(self.err_stack) > 0 else str(self.log_stack[-1]))   # for the purposes of determining packet length
-                while len(base64.b64encode((squishedpackets + next_packet).encode('ascii'))) < self.config["telemetry"]["max_packet_size"] and len(self.log_stack) + len(self.err_stack) > 0:
-                    if len(self.err_stack) > 0: # prefer error messages over log messages
+            while len(self.log_stack) + len(self.err_stack) > 0:  # while there's stuff to pop off
+                next_packet = (str(self.err_stack[-1]) if len(self.err_stack) > 0 else str(
+                    self.log_stack[-1]))  # for the purposes of determining packet length
+                while len(base64.b64encode((squishedpackets + next_packet).encode('ascii'))) < self.config["telemetry"][
+                    "max_packet_size"] and len(self.log_stack) + len(self.err_stack) > 0:
+                    if len(self.err_stack) > 0:  # prefer error messages over log messages
                         squishedpackets += str(self.err_stack.pop())
                     else:
                         squishedpackets += str(self.log_stack.pop())
@@ -108,6 +118,14 @@ class Telemetry(Submodule):
                         self.logger.error("Message prefix invalid.")
             sleep(1)
 
+    def add_metric(self, name, data):
+        self.snapshots[-1].add_metric(name, data)
+
+    def create_snapshot(self):
+        while True:
+            self.snapshots.append(Snapshot())
+            sleep(30)
+
     def heartbeat(self) -> None:
         """
         Send a heartbeat through Iridium.
@@ -115,17 +133,16 @@ class Telemetry(Submodule):
         """
         self.get_module_or_raise_error("iridium").send("TJREVERB ALIVE, {0}".format(time.time()))
 
-    def enter_normal_mode(self) -> None: # TODO: IMPLEMENT IN CYCLE 2
+    def enter_normal_mode(self) -> None:  # TODO: IMPLEMENT IN CYCLE 2
         """
         Enter normal mode.
         :return: None
         """
         pass
-    
-    def enter_low_power_mode(self) -> None: # TODO: IMPLEMENT IN CYCLE 2
+
+    def enter_low_power_mode(self) -> None:  # TODO: IMPLEMENT IN CYCLE 2
         """
         Enter low power mode.
         :return: None
         """
         pass
-    
