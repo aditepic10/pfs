@@ -64,27 +64,23 @@ class Telemetry(Submodule):
         :param radio: Radio to send telemetry through, either "aprs" or "iridium"
         :return True if anything was sent, false otherwise
         """
-        squishedpackets = ""
+        squished_packets = ""
         retVal = False
-
-        if not self.has_module(radio):
-            raise RuntimeError(f"[{self.name}]:[{radio}] module not found")
 
         with self.packet_lock:
             while len(self.log_stack) + len(self.err_stack) > 0:  # while there's stuff to pop off
                 next_packet = (str(self.err_stack[-1]) if len(self.err_stack) > 0 else str(
                     self.log_stack[-1]))  # for the purposes of determining packet length
-                while len(base64.b64encode((squishedpackets + next_packet).encode('ascii'))) < self.config["telemetry"][
+                while len(base64.b64encode((squished_packets + next_packet).encode('ascii'))) < self.config["telemetry"][
                     "max_packet_size"] and len(self.log_stack) + len(self.err_stack) > 0:
                     if len(self.err_stack) > 0:  # prefer error messages over log messages
-                        squishedpackets += str(self.err_stack.pop())
+                        squished_packets += str(self.err_stack.pop())
                     else:
-                        squishedpackets += str(self.log_stack.pop())
-                squishedpackets = base64.b64encode(squishedpackets.encode('ascii'))
-                # print(squishedpackets)
-                self.get_module_or_raise_error(radio).send(str(squishedpackets))
+                        squished_packets += str(self.log_stack.pop())
+                squished_packets = base64.b64encode(squished_packets.encode('ascii'))
+                self.get_module_or_raise_error(radio).send(str(squished_packets))
                 retVal = True
-                squishedpackets = ""
+                squished_packets = ""
 
         return retVal
 
@@ -127,11 +123,26 @@ class Telemetry(Submodule):
         """
         self.snapshots[-1].add_metric(name, data)
 
+    def create_metrics_dump(self):
+        """
+        Creates a big message w/ up to the 100 most recent snapshots.
+        :return: str
+        """
+        metrics_dump = ""
+        snapshots = 0
+        for index in range(len(self.snapshots) -1, -1, -1):
+            if snapshots == 100:
+                return metrics_dump
+            metrics_dump += self.snapshots[index].get_dump()
+            snapshots += 1
+        return metrics_dump
+
     def start_beacon(self):
         """
         Sends a beacon signal through APRS every 30s. Creates a new metrics Snapshot every 30s.
         :return: None
         """
+        # TODO: change this so ThreadHandler takes care of repeating every 30s
         while True:
             try:
                 beacon = self.snapshots[-1].get_beacon()
