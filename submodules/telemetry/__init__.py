@@ -33,9 +33,9 @@ class Telemetry(Submodule):
                 parent_logger=self.logger,
                 daemon=False
             ),
-            "create-new-snapshot": ThreadHandler(
-                target=partial(self.create_snapshot),
-                name="create-new-snapshot",
+            "start-beacon": ThreadHandler(
+                target=partial(self.start_beacon),
+                name="start-beacon",
                 parent_logger=self.logger,
                 daemon=False
             )
@@ -119,11 +119,27 @@ class Telemetry(Submodule):
             sleep(1)
 
     def add_metric(self, name, data):
+        """
+        Any submodule can add their relevant metrics to the most recent data snapshot through the telemetry object
+        :param name: the metric name
+        :param data: the metric data
+        :return: None
+        """
         self.snapshots[-1].add_metric(name, data)
 
-    def create_snapshot(self):
+    def start_beacon(self):
+        """
+        Sends a beacon signal through APRS every 30s. Creates a new metrics Snapshot every 30s.
+        :return: None
+        """
         while True:
-            self.snapshots.append(Snapshot())
+            try:
+                beacon = self.snapshots[-1].get_beacon()
+                self.get_module_or_raise_error("aprs").send(beacon)
+            except IndexError:
+                pass
+
+            self.snapshots.append(Snapshot(len(self.snapshots)))
             sleep(30)
 
     def heartbeat(self) -> None:
