@@ -10,6 +10,7 @@ core:
             - iridium
             - telemetry
     dump_interval: 3600
+    beacon_interval: 30
     sleep_interval: 1800
 
 antenna_deployer:

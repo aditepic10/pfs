@@ -33,12 +33,6 @@ class Telemetry(Submodule):
                 parent_logger=self.logger,
                 daemon=False
             ),
-            "start-beacon": ThreadHandler(
-                target=partial(self.start_beacon),
-                name="start-beacon",
-                parent_logger=self.logger,
-                daemon=False
-            )
         }
 
     def enqueue(self, message) -> bool:
@@ -139,19 +133,16 @@ class Telemetry(Submodule):
 
     def start_beacon(self):
         """
-        Sends a beacon signal through APRS every 30s. Creates a new metrics Snapshot every 30s.
+        Sends a beacon signal through APRS and create a new metrics Snapshot.
         :return: None
         """
-        # TODO: change this so ThreadHandler takes care of repeating every 30s
-        while True:
-            try:
-                beacon = self.snapshots[-1].get_beacon()
-                self.get_module_or_raise_error("aprs").send(beacon)
-            except IndexError:
-                pass
+        try:
+            beacon = self.snapshots[-1].get_beacon()
+            self.get_module_or_raise_error("aprs").send(beacon)
+        except IndexError:
+            pass
 
-            self.snapshots.append(Snapshot(len(self.snapshots)))
-            sleep(30)
+        self.snapshots.append(Snapshot(len(self.snapshots)))
 
     def heartbeat(self) -> None:
         """

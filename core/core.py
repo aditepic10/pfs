@@ -49,6 +49,10 @@ class Core:
             "telemetry_dump": Timer(
                 interval=self.config['core']['dump_interval'],
                 function=partial(self.submodules["telemetry"].dump)
+            ),
+            "telemetry_beacon": Timer(
+                interval=self.config['core']['beacon_interval'],
+                function=partial(self.submodules["telemetry"].start_beacon)
             )
         }
 
