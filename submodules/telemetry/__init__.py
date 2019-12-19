@@ -108,14 +108,15 @@ class Telemetry(Submodule):
                         self.logger.error("Message prefix invalid.")
             sleep(1)
 
-    def add_metric(self, name, data):
+    def add_metric(self, name, data, append=False):
         """
         Any submodule can add their relevant metrics to the most recent data snapshot through the telemetry object
         :param name: the metric name
         :param data: the metric data
+        :param append: add the data to the existing data
         :return: None
         """
-        self.snapshots[-1].add_metric(name, data)
+        self.snapshots[-1].add_metric(name, data, append)
 
     def create_metrics_dump(self):
         """

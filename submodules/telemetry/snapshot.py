@@ -10,13 +10,16 @@ class Snapshot:
         self.identifier = identifier
         self.metrics = {"TIME": time()}
 
-    def add_metric(self, name, data):
+    def add_metric(self, name, data, append):
         """
         Assigns a metric to the metrics snapshot
         :param name: metric name
         :param data: metric contents
+        :param append: add the data to the existing data
         :return: None
         """
+        if append:
+            self.metrics[name] += f",{data}"
         self.metrics[name] = data
 
     def create_message(self, name, keys):
