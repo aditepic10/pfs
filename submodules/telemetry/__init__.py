@@ -31,8 +31,8 @@ class Telemetry(Submodule):
                 target=partial(self.decide),
                 name="telemetry-decide",
                 parent_logger=self.logger,
-                daemon=False
-            ),
+                daemon=False,
+            )
         }
 
     def enqueue(self, message) -> bool:
@@ -42,16 +42,20 @@ class Telemetry(Submodule):
         or command (string - must begin with semicolon, see command_ingest's readme)
         :return True if a valid message was enqueued, false otherwise
         """
-        if not ((type(message) is str and message[0:4] == 'CMD$' and message[-1] == ';')  # message is Command
-                or type(message) is error.Error  # message is Error
-                or type(message) is log.Log):  # message is Log
+        if not (
+            (
+                type(message) is str and message[0:4] == "CMD$" and message[-1] == ";"
+            )  # message is Command
+            or type(message) is error.Error  # message is Error
+            or type(message) is log.Log
+        ):  # message is Log
             self.logger.error("Attempted to enqueue invalid message")
             return False
         with self.packet_lock:
             self.general_queue.append(message)  # append to general queue
             return True
 
-    def dump(self, radio='aprs') -> bool:
+    def dump(self, radio="aprs") -> bool:
         """
         Concatenates packets to fit in max_packet_size (defined in config) and send through the radio, removing the
         packets from the error and log stacks in the process
@@ -59,24 +63,27 @@ class Telemetry(Submodule):
         :return True if anything was sent, false otherwise
         """
         squished_packets = ""
-        retVal = False
+        success = False
 
         with self.packet_lock:
-            while len(self.log_stack) + len(self.err_stack) > 0:  # while there's stuff to pop off
-                next_packet = (str(self.err_stack[-1]) if len(self.err_stack) > 0 else str(
-                    self.log_stack[-1]))  # for the purposes of determining packet length
-                while len(base64.b64encode((squished_packets + next_packet).encode('ascii'))) < self.config["telemetry"][
-                    "max_packet_size"] and len(self.log_stack) + len(self.err_stack) > 0:
-                    if len(self.err_stack) > 0:  # prefer error messages over log messages
-                        squished_packets += str(self.err_stack.pop())
-                    else:
-                        squished_packets += str(self.log_stack.pop())
-                squished_packets = base64.b64encode(squished_packets.encode('ascii'))
-                self.get_module_or_raise_error(radio).send(str(squished_packets))
-                retVal = True
-                squished_packets = ""
+            dump = self.create_metrics_dump() + ";"
+            while len(self.err_stack) > 0:
+                # while there's stuff to pop off
 
-        return retVal
+                next_error_packet = str(self.err_stack[-1])
+                dump += f";{next_error_packet}"
+
+                success = True
+
+            max_len = self.config["telemetry"]["max_packet_size"]
+            messages = [
+                squished_packets[i : i + max_len]
+                for i in range(0, len(squished_packets), max_len)
+            ]
+            for message in messages:
+                self.get_module_or_raise_error(radio).send(message)
+
+        return success
 
     def clear_buffers(self) -> None:
         """
@@ -85,7 +92,6 @@ class Telemetry(Submodule):
         """
         with self.packet_lock:
             self.general_queue.clear()
-            self.log_stack.clear()
             self.err_stack.clear()
 
     def decide(self) -> None:
@@ -97,8 +103,14 @@ class Telemetry(Submodule):
             if len(self.general_queue) != 0:
                 with self.packet_lock:
                     message = self.general_queue.popleft()
-                    if type(message) is str and message[0:4] == 'CMD$' and message[-1] == ';':
-                        self.get_module_or_raise_error("command_ingest").enqueue(message)
+                    if (
+                        type(message) is str
+                        and message[0:4] == "CMD$"
+                        and message[-1] == ";"
+                    ):
+                        self.get_module_or_raise_error("command_ingest").enqueue(
+                            message
+                        )
                         # print("Running command_ingest.enqueue(" + message + ")")
                     elif type(message) is error.Error:
                         self.err_stack.append(message)
@@ -125,7 +137,7 @@ class Telemetry(Submodule):
         """
         metrics_dump = ""
         snapshots = 0
-        for index in range(len(self.snapshots) -1, -1, -1):
+        for index in range(len(self.snapshots) - 1, -1, -1):
             if snapshots == 100:
                 return metrics_dump
             metrics_dump += self.snapshots[index].get_dump()
@@ -150,7 +162,9 @@ class Telemetry(Submodule):
         Send a heartbeat through Iridium.
         :return: None
         """
-        self.get_module_or_raise_error("iridium").send("TJREVERB ALIVE, {0}".format(time.time()))
+        self.get_module_or_raise_error("iridium").send(
+            "TJREVERB ALIVE, {0}".format(time.time())
+        )
 
     def enter_normal_mode(self) -> None:  # TODO: IMPLEMENT IN CYCLE 2
         """
