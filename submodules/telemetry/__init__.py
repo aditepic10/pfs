@@ -43,12 +43,12 @@ class Telemetry(Submodule):
         :return True if a valid message was enqueued, false otherwise
         """
         if not (
-            (
-                type(message) is str and message[0:4] == "CMD$" and message[-1] == ";"
-            )  # message is Command
-            or type(message) is error.Error  # message is Error
-            or type(message) is log.Log
-        ):  # message is Log
+                (
+                        type(message) is str and message[0:4] == "CMD$" and message[-1] == ";"
+                )  # message is Command
+                or type(message) is error.Error  # message is Error
+                or type(message) is log.Log  # message is Log
+        ):
             self.logger.error("Attempted to enqueue invalid message")
             return False
         with self.packet_lock:
@@ -67,18 +67,15 @@ class Telemetry(Submodule):
 
         with self.packet_lock:
             dump = self.create_metrics_dump() + ";"
-            while len(self.err_stack) > 0:
-                # while there's stuff to pop off
-
+            while len(self.err_stack) > 0:  # while there's stuff to pop off
                 next_error_packet = str(self.err_stack[-1])
                 dump += f";{next_error_packet}"
-
-                success = True
+                success = True  # To return later
 
             max_len = self.config["telemetry"]["max_packet_size"]
             messages = [
-                squished_packets[i : i + max_len]
-                for i in range(0, len(squished_packets), max_len)
+                dump[i: i + max_len]
+                for i in range(0, len(dump), max_len)
             ]
             for message in messages:
                 self.get_module_or_raise_error(radio).send(message)
@@ -103,14 +100,12 @@ class Telemetry(Submodule):
             if len(self.general_queue) != 0:
                 with self.packet_lock:
                     message = self.general_queue.popleft()
-                    if (
-                        type(message) is str
-                        and message[0:4] == "CMD$"
-                        and message[-1] == ";"
+                    if (    # If this message is a command
+                            type(message) is str
+                            and message[0:4] == "CMD$"
+                            and message[-1] == ";"
                     ):
-                        self.get_module_or_raise_error("command_ingest").enqueue(
-                            message
-                        )
+                        self.get_module_or_raise_error("command_ingest").enqueue(message)
                         # print("Running command_ingest.enqueue(" + message + ")")
                     elif type(message) is error.Error:
                         self.err_stack.append(message)
